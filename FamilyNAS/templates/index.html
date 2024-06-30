@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FamilyNAS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="center-content">
+            <h2>Family NAS</h2>
+            <form method="post" action="/upload" enctype="multipart/form-data">
+                <label for="fileInput">選擇文件：</label>
+                <input type="file" name="file" id="fileInput" class="form-control">
+                <br>
+                <div id="imagePreview"></div>
+                <br>
+                <button type="submit" class="btn btn-primary">上傳</button>
+            </form>
+
+            <br>
+
+            <h2>已上傳文件列表</h2>
+            <ul>
+            {% for file in files %}
+                <li class="file-item">
+                    <div class="file-info">
+                        {% if file.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')) %}
+                            <img src="{{ url_for('static', filename='icons/image-icon.png') }}" alt="圖片檔案">
+                            <span>圖片檔案</span>
+                        {% elif file.endswith(('.mp4', '.avi', '.mov', '.mkv')) %}
+                            <img src="{{ url_for('static', filename='icons/video-icon.png') }}" alt="影片檔案">
+                            <span>影片檔案</span>
+                        {% else %}
+                            <img src="{{ url_for('static', filename='icons/file-icon.png') }}" alt="檔案">
+                            <span>普通檔案</span>
+                        {% endif %}
+                    </div>
+                    <span>{{ file }}</span>
+                    <div class="file-actions">
+                        <a href="{{ url_for('download_file', filename=file) }}" class="btn">下載</a>
+                        <button class="btn btn-danger" onclick="deleteFile('{{ file }}')">刪除</button>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function deleteFile(filename) {
+            if (confirm(`確定要刪除文件 ${filename} 嗎？`)) {
+                fetch(`/delete/${filename}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    location.reload();
+                })
+                .catch(error => console.error('刪除文件時發生錯誤:', error));
+            }
+        }
+
+        function previewImage() {
+            var preview = document.getElementById('imagePreview');
+            var file = document.getElementById('fileInput').files[0];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                var img = document.createElement('img');
+                img.src = reader.result;
+                img.style.maxWidth = '100%';
+                preview.innerHTML = '';
+                preview.appendChild(img);
+            }
+
+            if (file && file.type.startsWith('image')) {
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '';
+            }
+        }
+
+        document.getElementById('fileInput').addEventListener('change', previewImage);
+    </script>
+</body>
+</html>
